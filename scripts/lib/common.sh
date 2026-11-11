@@ -46,9 +46,14 @@ apt_get() {
     -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold "$@"
 }
 
-# Install the given packages if any of them is missing.
+# Install the given packages if any of them is missing (with their recommended packages,
+# unless the first argument is --no-recommends).
 apt_install() {
-  local missing=() pkg
+  local missing=() pkg extra=()
+  if [[ ${1:-} == --no-recommends ]]; then
+    extra=(--no-install-recommends)
+    shift
+  fi
   for pkg in "$@"; do
     dpkg-query -W -f='${Status}' "$pkg" 2>/dev/null | grep -q 'install ok installed' || missing+=("$pkg")
   done
@@ -56,7 +61,7 @@ apt_install() {
     info "already installed: $*"
     return 0
   fi
-  apt_get install --no-install-recommends "${missing[@]}"
+  apt_get install "${extra[@]}" "${missing[@]}"
   ok "installed: ${missing[*]}"
 }
 

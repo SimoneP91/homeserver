@@ -84,8 +84,10 @@ base_packages() {
   apt_get update
   apt_get full-upgrade
   apt_install ca-certificates curl gnupg git make jq sqlite3 rsync tmux htop ncdu \
-    smartmontools locales unattended-upgrades apt-listchanges \
+    locales unattended-upgrades apt-listchanges \
     avahi-daemon avahi-utils libnss-mdns ufw restic
+  # SSD health (smartctl); its recommends would pull in a mail server.
+  apt_install --no-recommends smartmontools
   # Time sync: keep chrony if someone installed it, otherwise systemd's own client.
   if ! dpkg-query -W -f='${Status}' chrony 2>/dev/null | grep -q 'install ok installed'; then
     apt_install systemd-timesyncd

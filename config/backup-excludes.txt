@@ -16,5 +16,4 @@ __pycache__
 /home/*/.vscode-server
 /home/*/.local/share/uv
 /home/*/.local/share/claude
-/home/*/.local/share/fnm
 /home/*/.local/share/Trash
