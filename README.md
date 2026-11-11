@@ -25,7 +25,7 @@ reinstalla da zero seguendo le guide, senza dover ricordare nulla.
  http://status.local ─────┼──► :80  Caddy ───────┼─► 127.0.0.1:3001  Uptime Kuma     TV (LAN)
  http://dockge.local ─────┘    (unico ingresso)  └─► 127.0.0.1:5001  Dockge ──► /srv/apps/*
 
- ssh casa, VS Code ───────────► :22  sshd (solo chiave)
+ ssh casa, VS Code, Claude ────► :22  sshd (solo chiave), sviluppo in ~/dev
  da fuori casa ───────────────► Tailscale (facoltativo, nessuna porta aperta sul router)
 
                                                  restic, ogni notte ──► disco USB (+ copia remota)
@@ -55,6 +55,8 @@ Sul server:
 
 4. [App](docs/05-app.md): LocalClima in `/srv/apps/localclima`.
 5. [Backup](docs/06-backup.md): disco USB, `backup.sh init`, timer notturno.
+6. [Sviluppo remoto](docs/10-sviluppo-remoto.md) (facoltativo): `scripts/dev-tools.sh`, VS Code
+   Remote-SSH, Claude Code in tmux.
 
 ## Guide
 
@@ -69,6 +71,7 @@ Sul server:
 | [7. Accesso remoto](docs/07-accesso-remoto.md) | Tailscale, MagicDNS, Tailscale Serve |
 | [8. Manutenzione](docs/08-manutenzione.md) | aggiornamenti, log, spazio, blackout, reinstallazione |
 | [9. Problemi comuni](docs/09-problemi-comuni.md) | `.local` dal telefono, SSH, firewall, Docker, backup |
+| [10. Sviluppo remoto](docs/10-sviluppo-remoto.md) | strumenti di sviluppo, VS Code Remote-SSH, porte, Claude Code in tmux, sviluppo e produzione insieme |
 
 ## Il repository
 
@@ -76,6 +79,7 @@ Sul server:
 scripts/bootstrap.sh       configura un Debian 13 appena installato (idempotente)
 scripts/mdns-aliases.sh    pubblica i nomi delle app via mDNS e li sposta quando cambia l'IP
 scripts/backup.sh          backup restic: init, run, test-restore, restic …
+scripts/dev-tools.sh       strumenti di sviluppo (facoltativi): gh, Node.js, uv, Claude Code
 scripts/lib/common.sh      funzioni comuni degli script
 systemd/                   servizio dei nomi mDNS, servizio e timer del backup
 infra/compose.yaml         Caddy, Dockge, Uptime Kuma

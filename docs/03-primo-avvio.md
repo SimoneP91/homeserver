@@ -220,4 +220,5 @@ systemctl status ssh
 Se non riesci nemmeno a entrare dalla console, avvia la chiavetta di Debian e scegli
 *Advanced options → Rescue mode*.
 
-Avanti: [4. Servizi di base](04-servizi-base.md).
+Avanti: [4. Servizi di base](04-servizi-base.md). Per sviluppare sul server:
+[10. Sviluppo remoto](10-sviluppo-remoto.md).
