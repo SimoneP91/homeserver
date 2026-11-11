@@ -1,0 +1,22 @@
+# Secrets never belong in this repository. They live on the server only:
+#   /etc/homeserver/          backup settings and the restic password
+#   /srv/apps/<app>/...       each app's own secrets (e.g. localclima's devices.yaml, .env)
+.env
+*.env
+!*.env.example
+devices.yaml
+restic-password*
+tailscale*.key
+*.key
+*.pem
+id_*
+!*.pub
+
+# Local runtime data, in case a service is started from a checkout by mistake
+/infra/data/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
