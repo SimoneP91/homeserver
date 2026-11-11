@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  shell:
+    name: Shell scripts (shellcheck)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: shellcheck --version
+      - run: shellcheck -x scripts/*.sh scripts/lib/*.sh
+
+  yaml:
+    name: YAML (yamllint, docker compose config)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: pipx run yamllint --strict .
+      - name: Compose files are valid
+        run: |
+          docker compose -f infra/compose.yaml config --quiet
+          docker compose -f apps/_template/compose.yaml config --quiet
+
+  caddy:
+    name: Caddyfile (caddy validate)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Validate with the same image the server runs
+        run: >-
+          docker run --rm -v "$PWD/infra/caddy:/etc/caddy:ro" caddy:2
+          caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
