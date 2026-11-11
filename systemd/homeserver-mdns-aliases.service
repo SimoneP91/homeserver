@@ -1,0 +1,23 @@
+[Unit]
+Description=Publish the app names (<name>.local) of this server over mDNS
+Documentation=file:///srv/homeserver/docs/04-servizi-base.md
+Requires=avahi-daemon.service
+After=avahi-daemon.service network-online.target
+Wants=network-online.target
+# Restarting avahi-daemon drops every published record: start again with it.
+PartOf=avahi-daemon.service
+
+[Service]
+Type=simple
+ExecStart=/srv/homeserver/scripts/mdns-aliases.sh /srv/homeserver/infra/mdns/aliases
+Restart=always
+RestartSec=5
+# Talks to avahi-daemon over D-Bus only: no privileges needed.
+DynamicUser=yes
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target
