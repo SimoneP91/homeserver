@@ -1,0 +1,4 @@
+# Copy to infra/caddy/sites/<app>.caddy, then: make caddy-reload
+http://myapp.local {
+	reverse_proxy 127.0.0.1:8101
+}

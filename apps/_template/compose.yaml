@@ -1,0 +1,18 @@
+# Template for a new app. Copy it to /srv/apps/<app>/compose.yaml, or keep the compose file of
+# the app's own repository and check that it follows the same rules. See apps/README.md.
+name: myapp
+
+services:
+  app:
+    image: ghcr.io/example/myapp:1          # pin the major version; or `build: .`
+    container_name: myapp
+    restart: unless-stopped                  # back up after a reboot or a crash
+    # Apps that must see the LAN directly (broadcast discovery, Wake-on-LAN, mDNS) replace
+    # `ports:` with `network_mode: host` and are told to listen on 127.0.0.1:<port>.
+    ports:
+      - 127.0.0.1:8101:8000                  # loopback only: Caddy publishes http://myapp.local
+    env_file:
+      - path: .env                           # secrets: git-ignored, backed up with /srv
+        required: false
+    volumes:
+      - ./data:/data                         # persistent data under /srv/apps/<app>: backed up

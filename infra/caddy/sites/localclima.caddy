@@ -1,0 +1,4 @@
+# LocalClima: air conditioners and TVs (apps/localclima). Listens on loopback port 8100.
+http://localclima.local {
+	reverse_proxy 127.0.0.1:8100
+}
