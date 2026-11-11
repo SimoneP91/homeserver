@@ -266,6 +266,25 @@ mdns_aliases() {
   ok "names: $(sed -e 's/#.*//' "$REPO_DIR/infra/mdns/aliases" | xargs | sed 's/\([^ ]*\)/\1.local/g')"
 }
 
+backups() {
+  step "Backups (restic): settings and nightly timer"
+  if [[ -f /etc/homeserver/backup.env ]]; then
+    info "settings present: /etc/homeserver/backup.env"
+  else
+    install -m 0600 "$REPO_DIR/config/backup.env.example" /etc/homeserver/backup.env
+    ok "settings template copied to /etc/homeserver/backup.env"
+  fi
+  chmod 0755 "$REPO_DIR/scripts/backup.sh"
+  install_unit homeserver-backup.service || true
+  install_unit homeserver-backup.timer || true
+  systemctl daemon-reload
+  if systemctl is-enabled --quiet homeserver-backup.timer; then
+    info "nightly backup timer enabled"
+  else
+    info "timer off until the backup disk is set up: docs/06-backup.md"
+  fi
+}
+
 firewall() {
   step "Firewall (ufw)"
   if ! $opt_firewall; then
@@ -348,7 +367,7 @@ EOF
 
 main() {
   parse_args "$@"
-  require_root "$@"
+  require_root
   check_system
   base_packages
   time_and_locale
@@ -358,6 +377,7 @@ main() {
   configure_avahi
   directories
   mdns_aliases
+  backups
   install_tailscale
   firewall
   start_infra

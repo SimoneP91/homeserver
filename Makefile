@@ -46,6 +46,18 @@ aliases: ## State of the mDNS names and the address each one resolves to
 		avahi-resolve -4 -n "$$name.local" || echo "$$name.local: NOT resolved"; \
 	done
 
+# ----------------------------------------------------------------------- backup --
+
+.PHONY: backup snapshots test-restore
+backup: ## Back up now (as the nightly timer does), showing the output
+	sudo scripts/backup.sh run
+
+snapshots: ## List the backup snapshots
+	sudo scripts/backup.sh snapshots
+
+test-restore: ## Restore /srv/homeserver from the latest snapshot to a temp dir and compare
+	sudo scripts/backup.sh test-restore
+
 # ------------------------------------------------------------------------- lint --
 
 .PHONY: lint

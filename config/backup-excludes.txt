@@ -1,0 +1,20 @@
+# Rebuildable things left out of the backup (restic --exclude-file syntax, one pattern per line).
+# Docker images and containers live in /var/lib/docker, which is not backed up at all.
+
+# Dependencies and build output
+node_modules
+.venv
+__pycache__
+.mypy_cache
+.ruff_cache
+.pytest_cache
+.tox
+
+# Per-user caches and tools that reinstall themselves
+/home/*/.cache
+/home/*/.npm
+/home/*/.vscode-server
+/home/*/.local/share/uv
+/home/*/.local/share/claude
+/home/*/.local/share/fnm
+/home/*/.local/share/Trash

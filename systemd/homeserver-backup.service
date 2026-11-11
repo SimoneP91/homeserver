@@ -1,0 +1,12 @@
+[Unit]
+Description=Back up the home server with restic
+Documentation=file:///srv/homeserver/docs/06-backup.md
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/srv/homeserver/scripts/backup.sh run
+# Stay out of the way of the apps.
+Nice=10
+IOSchedulingClass=idle

@@ -18,7 +18,7 @@ die() {
 }
 
 require_root() {
-  [[ ${EUID} -eq 0 ]] || die "run this script as root: sudo $0 $*"
+  [[ ${EUID} -eq 0 ]] || die "run it as root: sudo $0 ..."
 }
 
 # Write CONTENT (read from stdin) to PATH with MODE, only if it differs from what is there.
