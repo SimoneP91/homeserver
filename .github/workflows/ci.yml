@@ -26,11 +26,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - run: pipx run yamllint --strict .
+      - run: pipx run --spec yamllint==1.38.0 yamllint --strict .
       - name: Compose files are valid
         run: |
           docker compose -f infra/compose.yaml config --quiet
           docker compose -f apps/_template/compose.yaml config --quiet
+
+  markdown:
+    name: Markdown (markdownlint)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: npx --yes markdownlint-cli2@0.24.0 "**/*.md"
 
   caddy:
     name: Caddyfile (caddy validate)
