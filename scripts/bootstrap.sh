@@ -11,6 +11,7 @@
 #   --tailscale          also install Tailscale (then run: sudo tailscale up)
 #   --no-firewall        do not configure or enable ufw
 #   --no-infra           do not start the infra stack (Caddy, Dockge, Uptime Kuma)
+#   --no-ssh-hardening   keep password logins over SSH even when a key is installed
 #   -h, --help           show this help
 #
 # See docs/03-primo-avvio.md.
@@ -36,6 +37,7 @@ opt_reboot=''
 opt_tailscale=false
 opt_firewall=true
 opt_infra=true
+opt_ssh_hardening=true
 
 usage() {
   sed -n '2,/^set -euo/{/^set -euo/d;s/^# \{0,1\}//;p}' "${BASH_SOURCE[0]}"
@@ -50,6 +52,7 @@ parse_args() {
       --tailscale) opt_tailscale=true ;;
       --no-firewall) opt_firewall=false ;;
       --no-infra) opt_infra=false ;;
+      --no-ssh-hardening) opt_ssh_hardening=false ;;
       -h | --help) usage; exit 0 ;;
       *) die "unknown option: $1 (see --help)" ;;
     esac
@@ -317,6 +320,45 @@ firewall() {
   ok "enabled: $(ufw status | grep -c ALLOW) allow rules (see: sudo ufw status verbose)"
 }
 
+harden_ssh() {
+  step "SSH: key-only logins, no root"
+  if ! $opt_ssh_hardening; then
+    warn "skipped (--no-ssh-hardening): password logins stay allowed"
+    return 0
+  fi
+  local home keys conf=/etc/ssh/sshd_config.d/10-homeserver.conf
+  home=$(getent passwd "$opt_user" | cut -d: -f6)
+  keys=$home/.ssh/authorized_keys
+  # Only once the user can log in with a key: turning passwords off earlier would lock them out.
+  if ! grep -Eq '^[[:space:]]*(ssh-(ed25519|rsa)|ecdsa-sha2-|sk-)' "$keys" 2>/dev/null; then
+    warn "no public key in $keys: password logins stay ON for now"
+    warn "install your key (docs/03-primo-avvio.md), then run this script again"
+    return 0
+  fi
+  # sshd uses the FIRST value it reads for each setting and Debian's sshd_config includes
+  # sshd_config.d/*.conf at the top, so "10-" wins over files added later by other packages.
+  if write_file "$conf" 0644 <<'EOF'; then
+# Managed by /srv/homeserver/scripts/bootstrap.sh (--no-ssh-hardening to skip).
+# Key-only logins, never as root. Recovery: log in at the console and delete this file.
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PermitRootLogin no
+EOF
+    if ! sshd -t; then
+      rm -f "$conf"
+      die "sshd rejected the new settings: they were removed, nothing changed"
+    fi
+    systemctl reload ssh
+    warn "password logins over SSH are now OFF. Do NOT close this session yet: open a new"
+    warn "terminal and check that 'ssh $(hostname)' still logs you in with your key"
+  fi
+  if sshd -T 2>/dev/null | grep -qx 'passwordauthentication no'; then
+    ok "sshd: key-only logins"
+  else
+    warn "sshd still accepts passwords: another setting overrides $conf (check: sudo sshd -T)"
+  fi
+}
+
 install_tailscale() {
   $opt_tailscale || return 0
   step "Tailscale"
@@ -380,6 +422,7 @@ main() {
   backups
   install_tailscale
   firewall
+  harden_ssh
   start_infra
   summary
 }
