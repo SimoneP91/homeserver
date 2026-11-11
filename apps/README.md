@@ -4,24 +4,24 @@ Ogni app è un progetto docker compose a sé in `/srv/apps/<app>` (di solito il 
 repository), visibile anche da Dockge (<http://dockge.local>). Questa cartella del repo contiene
 solo quello che serve **lato server**: impostazioni, istruzioni e il modello per le app nuove.
 
-| Cartella                  | Contenuto                                                        |
-| ------------------------- | ---------------------------------------------------------------- |
+| Cartella | Contenuto |
+| --- | --- |
 | [localclima/](localclima/) | file `.env` di produzione per LocalClima (guida: [docs/05-app.md](../docs/05-app.md)) |
-| [_template/](_template/)   | `compose.yaml` e sito Caddy di esempio per un'app nuova          |
+| [_template/](_template/) | `compose.yaml` e sito Caddy di esempio per un'app nuova |
 
 ## Porte
 
 Le app ascoltano solo su `127.0.0.1` (loopback): dalla LAN si arriva a loro esclusivamente
 tramite Caddy, sulla porta 80, con il nome `<app>.local`.
 
-| Porta     | Servizio                                             |
-| --------- | ---------------------------------------------------- |
-| 80, 443   | Caddy (unica porta HTTP aperta verso la LAN)         |
-| 2019      | API di amministrazione di Caddy (loopback)           |
-| 3001      | Uptime Kuma                                          |
-| 5001      | Dockge                                               |
-| 8100      | LocalClima (produzione)                              |
-| 8101–8199 | app future (produzione): una porta ciascuna          |
+| Porta | Servizio |
+| --- | --- |
+| 80, 443 | Caddy (unica porta HTTP aperta verso la LAN) |
+| 2019 | API di amministrazione di Caddy (loopback) |
+| 3001 | Uptime Kuma |
+| 5001 | Dockge |
+| 8100 | LocalClima (produzione) |
+| 8101–8199 | app future (produzione): una porta ciascuna |
 | 8000, 5173, 3000… | **libere per lo sviluppo** (`make dev`, Vite…): vedi [docs/10-sviluppo-remoto.md](../docs/10-sviluppo-remoto.md) |
 
 Le porte di produzione stanno nella fascia 81xx proprio per lasciare libere quelle predefinite
@@ -56,7 +56,7 @@ Esempio: un'app `ricette` che ascolta sulla porta 8101.
 
    ```caddy
    http://ricette.local {
-   	reverse_proxy 127.0.0.1:8101
+       reverse_proxy 127.0.0.1:8101
    }
    ```
 
