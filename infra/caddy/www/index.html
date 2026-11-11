@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Server di casa</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: system-ui, sans-serif;
+      }
+      body {
+        max-width: 32rem;
+        margin: 2rem auto;
+        padding: 0 1rem;
+      }
+      a {
+        display: block;
+        padding: 0.9rem 1rem;
+        margin: 0.5rem 0;
+        border: 1px solid #8884;
+        border-radius: 0.6rem;
+        text-decoration: none;
+        color: inherit;
+      }
+      small {
+        display: block;
+        opacity: 0.7;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Server di casa</h1>
+    <!-- One link per app: keep in step with infra/caddy/sites/ (see apps/README.md). -->
+    <h2>App</h2>
+    <a href="http://localclima.local/">LocalClima<small>condizionatori e TV</small></a>
+    <h2>Gestione</h2>
+    <a href="http://status.local/">Stato<small>Uptime Kuma: monitoraggio e notifiche</small></a>
+    <a href="http://dockge.local/">Dockge<small>gestione dei container</small></a>
+  </body>
+</html>

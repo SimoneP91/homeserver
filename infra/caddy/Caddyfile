@@ -1,0 +1,19 @@
+# Reverse proxy of the home server. One file per site in sites/: see apps/README.md.
+#
+# Every site address starts with http:// on purpose: names under .local cannot get a public
+# certificate, and the scheme turns automatic HTTPS (certificates and the HTTP->HTTPS redirect)
+# off for that site only. A real domain added later without "http://" gets HTTPS by default.
+#
+# After a change: make caddy-reload (validates first, then reloads without downtime).
+{
+	# Admin API on loopback only, used by `caddy reload`.
+	admin localhost:2019
+}
+
+import sites/*.caddy
+
+# Anything else (http://casa.local, the bare IP...): the landing page with links to the apps.
+http:// {
+	root * /srv/www
+	file_server
+}

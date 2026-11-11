@@ -1,0 +1,4 @@
+# Dockge: compose stacks in /srv/apps (infra/compose.yaml)
+http://dockge.local {
+	reverse_proxy 127.0.0.1:5001
+}

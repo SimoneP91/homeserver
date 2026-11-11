@@ -1,0 +1,50 @@
+# Infrastructure shared by every app: reverse proxy, stack manager, monitoring.
+#   cd /srv/homeserver/infra && docker compose up -d      (or: make up, from the repo root)
+#
+# Images are pinned to their major version: `docker compose pull && docker compose up -d`
+# (make update) brings minor and patch releases, never a breaking major. See docs/08-manutenzione.md.
+# Data lives in /srv/data/<service>, outside this repository, and is backed up (docs/06-backup.md).
+name: infra
+
+services:
+  # Owns ports 80 (and 443, for future real domains) and routes each <name>.local to its app.
+  # Host networking: it reaches the apps on 127.0.0.1 and sees the clients' real addresses.
+  caddy:
+    image: caddy:2
+    container_name: caddy
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./caddy:/etc/caddy:ro       # Caddyfile + sites/*.caddy (a directory: edits are seen)
+      - ./caddy/www:/srv/www:ro     # landing page for http://<hostname>.local
+      - /srv/data/caddy/data:/data
+      - /srv/data/caddy/config:/config
+
+  # Manage the compose stacks in /srv/apps from the browser: http://dockge.local
+  # Same path inside and outside the container, as Dockge requires.
+  dockge:
+    image: louislam/dockge:1
+    container_name: dockge
+    restart: unless-stopped
+    ports:
+      - 127.0.0.1:5001:5001         # loopback only: reached through Caddy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /srv/data/dockge:/app/data
+      - /srv/apps:/srv/apps
+    environment:
+      DOCKGE_STACKS_DIR: /srv/apps
+
+  # Monitoring and phone notifications: http://status.local
+  # Host networking so that it can check the apps on 127.0.0.1 and ping devices on the LAN.
+  uptime-kuma:
+    image: louislam/uptime-kuma:2
+    container_name: uptime-kuma
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      UPTIME_KUMA_HOST: 127.0.0.1   # loopback only: reached through Caddy
+      UPTIME_KUMA_PORT: "3001"
+      TZ: Europe/Rome
+    volumes:
+      - /srv/data/uptime-kuma:/app/data

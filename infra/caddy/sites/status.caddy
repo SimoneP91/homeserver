@@ -1,0 +1,4 @@
+# Uptime Kuma: monitoring and notifications (infra/compose.yaml)
+http://status.local {
+	reverse_proxy 127.0.0.1:3001
+}
