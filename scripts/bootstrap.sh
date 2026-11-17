@@ -82,6 +82,33 @@ check_system() {
   ok "Debian ${codename:-?}, user $opt_user, repository in $REPO_DIR"
 }
 
+system_disk() {
+  step "System disk"
+  local src disk sysdir desc
+  src=$(findmnt -nvo SOURCE /)
+  disk=$(lsblk -rsno NAME,TYPE "$src" 2>/dev/null | awk '$2 == "disk" { print $1; exit }')
+  if [[ -z $disk ]]; then
+    warn "cannot tell which disk holds / ($src)"
+    return 0
+  fi
+  sysdir=/sys/block/$disk
+  desc="$(lsblk -dno SIZE "/dev/$disk" | xargs) $(lsblk -dno MODEL "/dev/$disk" | xargs)"
+  if [[ $(cat "$sysdir/device/type" 2>/dev/null) == MMC ]]; then
+    # eMMC: soldered flash, slower than an SSD and with fewer write cycles; smartctl cannot
+    # read it, the wear estimates are in sysfs (JEDEC: 0x01 = up to 10% used ... 0x0b = worn
+    # out; pre-EOL 0x01 normal, 0x02 warning, 0x03 urgent).
+    warn "/dev/$disk is eMMC ($desc$(cat "$sysdir/device/name" 2>/dev/null)): slower than an SSD and"
+    warn "it wears out with writes. Logs are capped; keep an eye on space and wear"
+    warn "(docs/03b-portatile-come-server.md)"
+    info "wear estimate (life_time): $(cat "$sysdir/device/life_time" 2>/dev/null || echo unknown)," \
+      "pre-EOL: $(cat "$sysdir/device/pre_eol_info" 2>/dev/null || echo unknown)"
+  elif [[ $(cat "$sysdir/queue/rotational" 2>/dev/null) == 1 ]]; then
+    warn "/dev/$disk is a spinning hard disk ($desc): it works, an SSD is much faster"
+  else
+    ok "/dev/$disk: $desc"
+  fi
+}
+
 base_packages() {
   step "Updating the system and installing the base packages"
   apt_get update
@@ -571,6 +598,7 @@ main() {
   parse_args "$@"
   require_root
   check_system
+  system_disk
   base_packages
   time_and_locale
   journald_limits
