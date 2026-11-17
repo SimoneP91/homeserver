@@ -81,6 +81,7 @@ Sul server:
 | [8. Manutenzione](docs/08-manutenzione.md) | aggiornamenti, log, spazio, blackout, reinstallazione |
 | [9. Problemi comuni](docs/09-problemi-comuni.md) | `.local` dal telefono, SSH, firewall, Docker, backup |
 | [10. Sviluppo remoto](docs/10-sviluppo-remoto.md) | dove sviluppare (sul PC, con questo server), strumenti di sviluppo, VS Code Remote-SSH, porte, Claude Code in tmux, sviluppo e produzione insieme |
+| [Da studiare](docs/da-studiare.md) | gli argomenti incontrati durante la preparazione, da approfondire, con i comandi per fare pratica |
 
 ## Il repository
 
