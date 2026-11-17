@@ -83,10 +83,16 @@ server l'unico utente sei tu, quindi `644` va bene.
 
 ```sh
 cd /srv/apps/localclima
-docker compose up -d --build     # la prima volta qualche minuto: frontend e dipendenze Python
+docker compose up -d --build     # la prima volta anche più di 10 minuti (sotto)
 docker compose ps                # STATUS deve diventare "healthy"
 curl -s http://127.0.0.1:8100/api/health
 ```
+
+La build installa le dipendenze npm, compila il frontend (TypeScript e Vite) e installa le
+dipendenze Python con uv. Su un processore lento come il nostro Celeron a 2 core la **prima**
+build può richiedere parecchi minuti, anche più di dieci, con la CPU al massimo: è normale, le
+app già avviate continuano a rispondere, solo più lente. 8 GB di RAM bastano. Le build successive
+riusano la cache di Docker e sono più rapide, finché non cambiano le dipendenze.
 
 Poi apri <http://localclima.local> dal telefono. Log:
 

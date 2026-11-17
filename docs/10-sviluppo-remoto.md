@@ -1,4 +1,22 @@
-# 10. Sviluppo remoto
+# 10. Sviluppo remoto (facoltativo)
+
+## Prima di tutto: dove sviluppare
+
+**Con il server attuale (Celeron N4020, 2 core, 8 GB), lo sviluppo quotidiano resta sul PC
+Windows.** VS Code Remote-SSH, `npm install`, le build di Vite, i test e Claude Code consumano CPU
+e memoria: su 2 core lenti sarebbero scomodi e rallenterebbero le app in produzione che girano
+accanto.
+
+| Dove | Cosa |
+| --- | --- |
+| PC Windows | sviluppo: editor, `make dev`, test, Claude Code; poi `git push` |
+| server | produzione: `git pull` e `docker compose up -d --build` in `/srv/apps/<app>` ([capitolo 5](05-app.md#aggiornare)); più avanti, l'agente self-hosted di Azure DevOps, che costruisce e pubblica le app (più lento che sul PC, ma va bene: lavora da solo) |
+
+Il resto di questo capitolo serve **se un giorno il server sarà una macchina più potente** (o per
+una modifica al volo): descrive come svilupparci sopra da Windows, via SSH. `dev-tools.sh` resta
+facoltativo e il bootstrap non lo lancia.
+
+## Sviluppare sul server, via SSH
 
 Il server non ha monitor: ci si sviluppa sopra **da Windows, via SSH**. VS Code (Remote-SSH) mostra
 l'editor sul PC, ma file, terminale, compilazioni e server di sviluppo girano sul server. Claude Code
