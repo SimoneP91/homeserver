@@ -37,8 +37,8 @@ Un disco qualsiasi, anche piccolo (i dati sono pochi GB). Viene **cancellato**.
 lsblk -o NAME,SIZE,MODEL,FSTYPE,LABEL,MOUNTPOINTS     # trova il disco USB, per esempio sdb
 ```
 
-Al posto di `sdX` metti il disco giusto (**non** l'SSD di sistema, che ha le partizioni montate su
-`/` e `/boot/efi`):
+Al posto di `sdX` metti il disco giusto (**non** il disco di sistema, che ha le partizioni montate su
+`/` e `/boot/efi`; se il sistema è su un eMMC, `mmcblk0`, il disco USB è spesso `sda`):
 
 ```sh
 sudo parted /dev/sdX --script mklabel gpt mkpart backup ext4 0% 100%
@@ -51,7 +51,7 @@ findmnt /mnt/backup                                     # deve mostrare /dev/sdX
 ```
 
 `nofail` fa partire il server anche se il disco non è collegato; in quel caso il backup si rifiuta
-di partire (invece di riempire l'SSD) e Uptime Kuma te lo segnala.
+di partire (invece di riempire il disco di sistema) e Uptime Kuma te lo segnala.
 
 ## Attivare il backup
 
