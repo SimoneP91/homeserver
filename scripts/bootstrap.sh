@@ -314,24 +314,85 @@ set_ini_key() {
   [[ $(md5sum "$file") != "$before" ]]
 }
 
+# The interfaces that can reach the LAN, comma-separated: the one of the default route first,
+# then every physical network card (cable, Wi-Fi, USB-Ethernet adapter: they have a "device" in
+# sysfs), so switching from one to another needs no new run. Virtual ones (Docker bridges, veth,
+# tailscale0) are left out.
+lan_interfaces() {
+  local uplink dev list=()
+  uplink=$(default_route_field dev)
+  [[ -z $uplink ]] || list+=("$uplink")
+  for dev in /sys/class/net/*; do
+    [[ -e $dev/device && ${dev##*/} != "$uplink" ]] || continue
+    list+=("${dev##*/}")
+  done
+  (IFS=,; printf '%s' "${list[*]}")
+}
+
+# Wireless interfaces (wlp2s0, wlan0...), one per line.
+wireless_interfaces() {
+  local dev
+  for dev in /sys/class/net/*; do
+    [[ -d $dev/wireless || -e $dev/phy80211 ]] && printf '%s\n' "${dev##*/}"
+  done
+  return 0
+}
+
+wifi_power_save() {
+  local ifaces iface uplink
+  ifaces=$(wireless_interfaces)
+  [[ -n $ifaces ]] || return 0
+  step "Wi-Fi: power saving off (it delays packets and makes mDNS miss queries)"
+  uplink=$(default_route_field dev)
+  if grep -qx "$uplink" <<<"$ifaces"; then
+    warn "the server reaches the router over Wi-Fi ($uplink): a cable, or a USB-Ethernet adapter,"
+    warn "is faster and more reliable (docs/03b-portatile-come-server.md)"
+  fi
+  apt_install iw
+  # The Debian installer configures Wi-Fi with ifupdown and wpa_supplicant. Its if-up.d hooks
+  # run every time an interface comes up, so the setting survives reconnections and reboots.
+  if [[ -d /etc/network/if-up.d ]]; then
+    write_file /etc/network/if-up.d/homeserver-wifi-powersave 0755 <<'EOF' || true
+#!/bin/sh
+# Managed by /srv/homeserver/scripts/bootstrap.sh.
+# ifupdown runs this after bringing up any interface: turn Wi-Fi power saving off, so that the
+# server answers at once and does not miss mDNS queries.
+[ -e "/sys/class/net/$IFACE/phy80211" ] || exit 0
+/usr/sbin/iw dev "$IFACE" set power_save off || true
+EOF
+  fi
+  if systemctl is-active --quiet NetworkManager; then
+    warn "NetworkManager is running: the ifupdown hook does not apply to the connections it manages,"
+    warn "see docs/03b-portatile-come-server.md"
+  fi
+  for iface in $ifaces; do
+    if [[ $(cat "/sys/class/net/$iface/operstate" 2>/dev/null) == up ]]; then
+      iw dev "$iface" set power_save off || warn "$iface: could not turn power saving off"
+      ok "$iface: $(iw dev "$iface" get power_save 2>/dev/null || echo 'power save: unknown')"
+    else
+      info "$iface: not connected"
+    fi
+  done
+}
+
 configure_avahi() {
   step "mDNS (avahi-daemon): <hostname>.local and the app names"
-  local conf=/etc/avahi/avahi-daemon.conf changed=false iface
+  local conf=/etc/avahi/avahi-daemon.conf changed=false ifaces
   # IPv4 only: phones and PCs then connect over IPv4, which is what the firewall expects, and
   # never try an IPv6 address the server does not answer on first.
   set_ini_key "$conf" use-ipv6 no && changed=true
   set_ini_key "$conf" publish-aaaa-on-ipv4 no && changed=true
-  # Only the LAN interface: never announce Docker's internal bridge addresses.
-  iface=$(default_route_field dev)
-  if [[ -n $iface ]]; then
-    set_ini_key "$conf" allow-interfaces "$iface" && changed=true
+  # Only the network cards: never announce Docker's internal bridge addresses.
+  ifaces=$(lan_interfaces)
+  if [[ -n $ifaces ]]; then
+    set_ini_key "$conf" allow-interfaces "$ifaces" && changed=true
   else
-    warn "no default route: avahi will answer on every interface"
+    warn "no network card found: avahi will answer on every interface"
   fi
   systemctl enable avahi-daemon >/dev/null
   if $changed; then
     systemctl restart avahi-daemon
-    ok "avahi configured (interface ${iface:-any}, IPv4 only)"
+    ok "avahi configured (interfaces ${ifaces:-any}, IPv4 only)"
   else
     systemctl start avahi-daemon
     info "avahi already configured"
@@ -514,6 +575,7 @@ main() {
   time_and_locale
   journald_limits
   laptop
+  wifi_power_save
   automatic_updates
   install_docker
   configure_avahi
