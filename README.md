@@ -7,7 +7,7 @@ LocalClima (condizionatori e TV, repository a parte).
 Non è un'app: sono script, configurazioni e guide. Con questo repository e il backup il server si
 reinstalla da zero seguendo le guide, senza dover ricordare nulla.
 
-- **Hardware**: mini PC Intel Core i3-6100, 16 GB di RAM, SSD da 256 GB, collegato al router via cavo.
+- **Hardware**: mini PC Intel Core i9-10980HK (8 core, 16 thread), 8 GB di RAM DDR4 SO-DIMM, SSD da 512 GB, collegato al router via cavo.
 - **Sistema**: Debian 13 "trixie", senza desktop, gestito via SSH.
 - **Niente IP fissi**: il router cambia gli indirizzi ogni poche ore e non vogliamo dipendere dalla
   sua configurazione. Server e app si raggiungono per nome (`casa.local`, `localclima.local`…),

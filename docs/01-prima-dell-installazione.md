@@ -10,7 +10,7 @@ Collega monitor, tastiera e il **cavo di rete**.
 
 | Cosa | Come | Cosa aspettarsi |
 | --- | --- | --- |
-| CPU e RAM | Gestione attività → Prestazioni | Core i3-6100, 16 GB |
+| CPU e RAM | Gestione attività → Prestazioni | Core i9-10980HK (8 core, 16 thread), 8 GB |
 | RAM senza errori | `mdsched.exe` → *Riavvia ora e verifica* | al riavvio successivo: "nessun errore" |
 | Salute dell'SSD | PowerShell (sotto) o [CrystalDiskInfo](https://crystalmark.info/) (`winget install CrystalDewWorld.CrystalDiskInfo`) | stato "Buono", poche ore di accensione, usura bassa |
 | Rete cablata | PowerShell: `Get-NetAdapter` | la scheda Ethernet con `LinkSpeed` 1 Gbps |

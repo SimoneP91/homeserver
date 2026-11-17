@@ -27,7 +27,7 @@ server SSH. Tutto il resto lo aggiunge `bootstrap.sh` nel capitolo successivo.
 | Full name / Username | il tuo nome e un nome utente minuscolo (per esempio le tue iniziali) |
 | Password | una password robusta: serve per `sudo` (gli accessi SSH useranno la chiave) |
 | Partitioning method | **Guided – use entire disk** |
-| Disk | l'SSD da 256 GB (non la chiavetta!) |
+| Disk | l'SSD da 512 GB (non la chiavetta!) |
 | Partitioning scheme | **All files in one partition** |
 | Conferma | *Finish partitioning and write changes* → **Yes** |
 | Mirror | *Italy* → `deb.debian.org`, proxy vuoto |
