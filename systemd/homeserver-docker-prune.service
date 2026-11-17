@@ -1,0 +1,12 @@
+[Unit]
+Description=Remove the Docker images no longer used (left over by rebuilds and updates)
+Documentation=file:///srv/homeserver/docs/08-manutenzione.md
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+# Dangling images only: nothing a container uses, no volumes, no stopped containers.
+ExecStart=/usr/bin/docker image prune --force
+Nice=10
+IOSchedulingClass=idle

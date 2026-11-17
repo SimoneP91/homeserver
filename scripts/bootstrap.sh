@@ -319,6 +319,14 @@ EOF
   fi
   systemctl enable --now docker containerd >/dev/null
 
+  # Every rebuild and update leaves the previous image behind: remove them weekly, so a small
+  # disk does not fill up. The build cache stays: it is what keeps the next build short.
+  install_unit homeserver-docker-prune.service || true
+  install_unit homeserver-docker-prune.timer || true
+  systemctl daemon-reload
+  systemctl enable --now --quiet homeserver-docker-prune.timer
+  info "unused images removed every Sunday (homeserver-docker-prune.timer)"
+
   if id -nG "$opt_user" | tr ' ' '\n' | grep -qx docker; then
     info "$opt_user is already in the docker group"
   else
