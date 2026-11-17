@@ -457,6 +457,11 @@ mdns_aliases() {
   step "Service that publishes the app names (homeserver-mdns-aliases)"
   local changed=false
   chmod 0755 "$REPO_DIR/scripts/mdns-aliases.sh"
+  if ! getent passwd homeserver-mdns >/dev/null; then
+    useradd --system --user-group --no-create-home --home-dir /nonexistent \
+      --shell /usr/sbin/nologin --comment "homeserver mDNS aliases" homeserver-mdns
+    changed=true
+  fi
   install_unit homeserver-mdns-aliases.service && changed=true
   systemctl daemon-reload
   systemctl enable homeserver-mdns-aliases.service >/dev/null

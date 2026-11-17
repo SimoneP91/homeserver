@@ -13,7 +13,12 @@ ExecStart=/srv/homeserver/scripts/mdns-aliases.sh /srv/homeserver/infra/mdns/ali
 Restart=always
 RestartSec=5
 # Talks to avahi-daemon over D-Bus only: no privileges needed.
-DynamicUser=yes
+#
+# A static system user (created by bootstrap.sh), not DynamicUser=: on Debian 13 avahi-publish
+# run as a dynamic user fails with "Failed to create client object: An unexpected D-Bus error
+# occurred", while the same sandbox with a static user works (tested on the server).
+User=homeserver-mdns
+Group=homeserver-mdns
 NoNewPrivileges=yes
 ProtectSystem=strict
 ProtectHome=yes
