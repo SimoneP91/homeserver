@@ -40,6 +40,29 @@ Windows 10 e 11 risolvono i nomi `.local`. Se non funziona: la rete deve essere 
 (Impostazioni → Rete e Internet → Proprietà); alcuni client VPN aziendali disattivano mDNS. In
 alternativa usa l'IP: `ssh -o HostName=<ip> casa` ([capitolo 3](03-primo-avvio.md#se-casalocal-non-si-risolve)).
 
+## Il server sparisce dalla rete ogni tanto
+
+Succede soprattutto con un portatile o con il Wi-Fi. Dalla console (o appena torna raggiungibile):
+
+```sh
+journalctl -b -1 -n 50                    # le ultime righe prima dell'ultimo riavvio: spento, sospeso?
+journalctl -b -u systemd-logind | grep -i -E 'lid|suspend'   # coperchio, sospensione
+systemctl is-enabled sleep.target         # deve essere "masked"
+iw dev wlp2s0 get power_save              # con il Wi-Fi: deve essere "off"
+iw dev wlp2s0 link                        # segnale: sotto -70 dBm è debole
+journalctl -k | grep -i -E 'wlp|r8152|enx|link (is )?(up|down)'   # cadute della scheda di rete
+```
+
+- **Si sospende chiudendo il coperchio**: il bootstrap non è stato lanciato, o con `--no-laptop`
+  ([3b](03b-portatile-come-server.md#coperchio-chiuso)).
+- **Wi-Fi debole a coperchio chiuso**: le antenne sono spesso nello schermo. Avvicinalo al router,
+  lascialo socchiuso o, meglio, usa un cavo o un adattatore USB-Ethernet.
+- **L'adattatore USB-Ethernet si disconnette**: prova un'altra porta USB 3, senza hub; non usare
+  `powertop --auto-tune` ([3b](03b-portatile-come-server.md#il-risparmio-energetico-del-wi-fi)).
+- **Si spegne del tutto**: blackout lungo con la batteria scarica, o surriscaldamento (`journalctl
+  -k -b -1 | grep -i -E 'thermal|critical'`): vedi
+  [ventilazione](03b-portatile-come-server.md#ventilazione-e-temperature).
+
 ## SSH
 
 | Messaggio | Cosa fare |
@@ -51,10 +74,10 @@ alternativa usa l'IP: `ssh -o HostName=<ip> casa` ([capitolo 3](03-primo-avvio.m
 
 ## Il server non risponde più in SSH
 
-Collega monitor e tastiera ed entra dalla console. Poi, a seconda del caso:
+Entra dalla console (apri il portatile, o collega monitor e tastiera). Poi, a seconda del caso:
 
 ```sh
-ip -4 addr show                  # ha un IP? il cavo è collegato?
+ip -4 addr show                  # ha un IP? il cavo (o l'adattatore USB) è collegato? il Wi-Fi?
 systemctl status ssh             # sshd è attivo?
 sudo rm /etc/ssh/sshd_config.d/10-homeserver.conf && sudo systemctl reload ssh   # riattiva le password
 sudo ufw disable                 # per escludere il firewall; dopo: sudo ufw enable
@@ -111,4 +134,4 @@ docker image prune -f && docker builder prune -f
 sudo ncdu /
 ```
 
-Vedi anche [manutenzione](08-manutenzione.md#spazio-su-disco-e-salute-dellssd).
+Vedi anche [manutenzione](08-manutenzione.md#spazio-su-disco-e-salute-del-disco).

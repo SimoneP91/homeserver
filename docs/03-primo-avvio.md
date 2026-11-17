@@ -96,7 +96,7 @@ Il nome mDNS funziona solo nella stessa rete. Alternative, senza cambiare la con
    ```
 
    (utente, chiave e impronta restano quelli di `Host casa`).
-2. **IP dal server**: con monitor e tastiera, `ip -4 addr show`.
+2. **IP dal server**: dalla console (lo schermo e la tastiera del portatile), `ip -4 addr show`.
 3. **Tailscale**, anche da fuori casa: `ssh -o HostName=casa casa` (vedi
    [7. Accesso remoto](07-accesso-remoto.md)).
 
@@ -143,26 +143,34 @@ Opzioni utili (si possono aggiungere anche rilanciandolo in seguito):
 | `--tailscale` | installa anche Tailscale ([capitolo 7](07-accesso-remoto.md)) |
 | `--auto-reboot 04:30` | dopo un aggiornamento che lo richiede (kernel), riavvia da solo a quell'ora |
 | `--locale it_IT.UTF-8` | sistema in italiano |
+| `--no-laptop` | su un portatile, non tocca coperchio, sospensione, schermo e batteria ([3b](03b-portatile-come-server.md)) |
 | `--help` | tutte le opzioni |
 
-Ci mette 5–10 minuti. Cosa fa, in ordine:
+Ci mette 5–10 minuti (di più su un computer lento). Cosa fa, in ordine:
 
-1. aggiorna il sistema e installa i pacchetti di base (git, make, tmux, restic, avahi, ufw…);
-2. fuso orario `Europe/Rome`, ora sincronizzata via NTP, lingue inglese e italiano;
-3. limita lo spazio del journal di sistema (500 MB) e dei log dei container (30 MB ciascuno);
-4. aggiornamenti di sicurezza automatici (unattended-upgrades);
-5. Docker Engine e il plugin compose, dal repository ufficiale di Docker; il tuo utente entra nel
-   gruppo `docker`;
-6. avahi (mDNS): `casa.local` solo in IPv4 e solo sulla scheda di rete del router;
-7. le cartelle `/srv/apps`, `/srv/data`, `/etc/homeserver`;
-8. il servizio che pubblica i nomi delle app (`localclima.local`, `status.local`,
-   `dockge.local`);
-9. backup: copia le impostazioni in `/etc/homeserver/backup.env` (si attivano nel
-   [capitolo 6](06-backup.md));
-10. firewall (ufw), descritto nel [capitolo 4](04-servizi-base.md#firewall);
-11. **SSH solo con chiave**: se nel tuo `~/.ssh/authorized_keys` c'è una chiave, disattiva
+1. dice su che disco sta il sistema e avvisa se è un eMMC o un disco meccanico;
+2. aggiorna il sistema e installa i pacchetti di base (git, make, tmux, restic, avahi, ufw,
+   lm-sensors…);
+3. fuso orario `Europe/Rome`, ora sincronizzata via NTP, lingue inglese e italiano;
+4. limita lo spazio del journal di sistema (500 MB) e dei log dei container (30 MB ciascuno);
+5. **su un portatile** (se trova una batteria): coperchio chiuso senza conseguenze, niente
+   sospensione né ibernazione, schermo spento dopo un minuto, limite di carica della batteria se
+   il firmware lo permette ([3b](03b-portatile-come-server.md));
+6. **se c'è il Wi-Fi**: ne spegne il risparmio energetico;
+7. aggiornamenti di sicurezza automatici (unattended-upgrades);
+8. Docker Engine e il plugin compose, dal repository ufficiale di Docker; il tuo utente entra nel
+   gruppo `docker`; ogni domenica toglie le immagini non più usate;
+9. avahi (mDNS): `casa.local` solo in IPv4 e solo sulle schede di rete (cavo, Wi-Fi, adattatore
+   USB), non sulle reti interne di Docker;
+10. le cartelle `/srv/apps`, `/srv/data`, `/etc/homeserver`;
+11. il servizio che pubblica i nomi delle app (`localclima.local`, `status.local`,
+    `dockge.local`);
+12. backup: copia le impostazioni in `/etc/homeserver/backup.env` (si attivano nel
+    [capitolo 6](06-backup.md));
+13. firewall (ufw), descritto nel [capitolo 4](04-servizi-base.md#firewall);
+14. **SSH solo con chiave**: se nel tuo `~/.ssh/authorized_keys` c'è una chiave, disattiva
     l'accesso con password e l'accesso come root;
-12. avvia Caddy, Dockge e Uptime Kuma.
+15. avvia Caddy, Dockge e Uptime Kuma.
 
 Si può rilanciare quando vuoi (per esempio dopo un `git pull` di questo repository): modifica solo
 ciò che manca o è diverso.
@@ -204,11 +212,13 @@ E dal PC o dal telefono, nella rete di casa:
   database, scegli **SQLite** (il backup è pensato per quello);
 - <http://dockge.local>: Dockge. Crea subito l'account amministratore.
 
-Da questo momento monitor e tastiera si possono scollegare.
+Da questo momento il server può vivere da solo: su un portatile puoi chiudere il coperchio, su un
+desktop scollegare monitor e tastiera. Su un portatile, controlla le impostazioni descritte in
+[3b. Un portatile come server](03b-portatile-come-server.md#verificare-tutto).
 
 ## Se SSH smette di funzionare
 
-Collega monitor e tastiera ed entra dalla console, poi a seconda del caso:
+Entra dalla console (apri il portatile, o collega monitor e tastiera), poi a seconda del caso:
 
 ```sh
 ip -4 addr show                                              # che IP ha? è in rete?
@@ -220,5 +230,6 @@ systemctl status ssh
 Se non riesci nemmeno a entrare dalla console, avvia la chiavetta di Debian e scegli
 *Advanced options → Rescue mode*.
 
-Avanti: [4. Servizi di base](04-servizi-base.md). Per sviluppare sul server:
+Avanti: su un portatile [3b. Un portatile come server](03b-portatile-come-server.md), poi
+[4. Servizi di base](04-servizi-base.md). Dove e come sviluppare:
 [10. Sviluppo remoto](10-sviluppo-remoto.md).

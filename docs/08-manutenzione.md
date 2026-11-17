@@ -4,9 +4,9 @@
 
 | Quando | Cosa |
 | --- | --- |
-| da solo, ogni giorno | aggiornamenti di sicurezza di Debian; backup alle 3 |
+| da solo, ogni giorno | aggiornamenti di sicurezza di Debian; backup alle 3 (la domenica anche la pulizia delle immagini Docker) |
 | quando ti avvisa Uptime Kuma | guarda cosa non risponde ([problemi comuni](09-problemi-comuni.md)) |
-| una volta al mese | aggiornare sistema e infrastruttura (sotto), `make test-restore`, spazio su disco |
+| una volta al mese | aggiornare sistema e infrastruttura (sotto), `make test-restore`, spazio su disco, temperature |
 | quando cambi il codice di un'app | aggiornare l'app |
 
 ## Aggiornare il sistema
@@ -59,22 +59,43 @@ docker image prune -f
 
 In `journalctl` e `less`: `G` va in fondo, `/parola` cerca, `q` esce. `-f` segue dal vivo.
 
-## Spazio su disco e salute dell'SSD
+## Spazio su disco e salute del disco
 
 ```sh
-df -h /                            # spazio libero sul disco di sistema
-docker system df                   # quanto occupano immagini, container, volumi, cache di build
-docker image prune -f              # immagini non più usate
-docker builder prune -f            # cache di build (si riforma alla prossima build)
-journalctl --disk-usage            # il journal è limitato a 500 MB
-sudo ncdu /                        # chi occupa spazio, cartella per cartella (q per uscire)
-sudo smartctl -a /dev/sda          # salute dell'SSD (su NVMe: /dev/nvme0n1)
+df -h /                                  # spazio libero sul disco di sistema
+docker system df                         # quanto occupano immagini, container, volumi, cache di build
+docker image prune -f                    # immagini non più usate (lo fa anche il timer della domenica)
+docker builder prune -f                  # cache di build (si riforma alla prossima build)
+journalctl --disk-usage                  # il journal è limitato a 500 MB
+sudo ncdu /                              # chi occupa spazio, cartella per cartella (q per uscire)
+lsblk -d -o NAME,MODEL,SIZE,ROTA,TRAN    # che disco è
+sudo smartctl -a /dev/sda                # salute di un SSD SATA (NVMe: /dev/nvme0n1)
+cat /sys/block/mmcblk0/device/life_time  # usura di un eMMC (smartctl non lo legge)
 ```
+
+Su un disco piccolo o un eMMC: [3b](03b-portatile-come-server.md#disco-piccolo-o-emmc).
+
+## Temperature e batteria
+
+```sh
+sensors                                                  # temperature di CPU e scheda
+/srv/homeserver/scripts/battery-limit.sh --check         # portatile: limite di carica
+cat /sys/class/power_supply/BAT0/{status,capacity}       # portatile: stato e carica in %
+```
+
+Ogni qualche mese, su un portatile, guarda anche la batteria: se si gonfia (fondo o touchpad
+sollevati) va sostituita ([3b](03b-portatile-come-server.md#batteria)). Una volta l'anno togli
+la polvere dalle prese d'aria.
 
 ## Dopo un blackout
 
-Con *Restore on AC Power Loss → Power On* nel BIOS il server si riaccende da solo, e con lui
-avahi, i nomi delle app e tutti i container. Controlla dopo qualche minuto:
+Un **portatile** supera i blackout brevi con la batteria. In un blackout lungo si spegne quando la
+batteria si scarica e, al ritorno della corrente, si riaccende da solo solo se il BIOS ha *Power
+On When AC Detected* o simili; altrimenti premi il tasto di accensione
+([3b](03b-portatile-come-server.md#blackout)). Un **desktop o mini PC** con *Restore on AC Power
+Loss → Power On* nel BIOS si riaccende da solo.
+
+All'avvio ripartono avahi, i nomi delle app e tutti i container. Controlla dopo qualche minuto:
 
 ```sh
 cd /srv/homeserver
@@ -89,7 +110,7 @@ Il backup saltato durante il blackout parte da solo all'avvio.
 
 ```sh
 sudo reboot
-sudo poweroff          # per spostarlo o pulirlo dalla polvere
+sudo poweroff          # per spostarlo o pulirlo dalla polvere (il tasto di accensione fa lo stesso)
 ```
 
 ## Cambiare nome al server

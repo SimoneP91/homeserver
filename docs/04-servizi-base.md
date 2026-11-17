@@ -12,6 +12,8 @@ Cosa gira sul server oltre alle app, come funziona e come si controlla.
 | ufw | sistema | firewall |
 | unattended-upgrades | sistema | aggiornamenti di sicurezza automatici |
 | homeserver-backup.timer | sistema (systemd) | backup notturno ([capitolo 6](06-backup.md)) |
+| homeserver-docker-prune.timer | sistema (systemd) | ogni domenica cancella le immagini Docker non più usate |
+| homeserver-battery-limit | sistema (systemd) | solo sui portatili che lo permettono: limite di carica della batteria ([3b](03b-portatile-come-server.md#batteria)) |
 
 I container dell'infrastruttura sono definiti in [infra/compose.yaml](../infra/compose.yaml) e
 salvano i dati in `/srv/data/<servizio>`. Comandi, da `/srv/homeserver`:
@@ -39,8 +41,8 @@ risolti con **mDNS** (lo stesso meccanismo di stampanti e AirPlay), che non ha b
   con intervalli crescenti, fino a 10 minuti.
 - Le app **non** si annunciano da sole (LocalClima ha `LOCALCLIMA_MDNS_HOSTNAME` vuoto): due
   annunci dello stesso nome andrebbero in conflitto.
-- avahi lavora solo in **IPv4** e solo sulla scheda di rete del router (non sulle reti interne di
-  Docker), così telefoni e PC ricevono sempre l'indirizzo giusto.
+- avahi lavora solo in **IPv4** e solo sulle schede di rete fisiche (cavo, Wi-Fi, adattatore USB),
+  non sulle reti interne di Docker: così telefoni e PC ricevono sempre l'indirizzo giusto.
 
 Dopo un cambio di IP i telefoni possono ricordare il vecchio indirizzo per un paio di minuti.
 
@@ -50,7 +52,10 @@ journalctl -u homeserver-mdns-aliases -n 50      # cosa ha pubblicato e quando
 avahi-resolve -4 -n localclima.local             # risolve un nome dal server
 ```
 
-Se il server passa dal cavo al Wi-Fi, rilancia il bootstrap: avahi va spostato sulla nuova scheda.
+Il bootstrap indica ad avahi le schede di rete presenti in quel momento: se il server passa dal
+cavo al Wi-Fi integrato, per i nomi non serve altro; con una scheda nuova (per esempio un altro
+adattatore USB-Ethernet, che ha un nome diverso) rilancia il bootstrap
+([3b](03b-portatile-come-server.md#rete-cavo-adattatore-usb-o-wi-fi)).
 
 ## Caddy: un nome per ogni app
 
