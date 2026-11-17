@@ -1,0 +1,14 @@
+[Unit]
+Description=Limit the laptop battery charge to 75-80% (it stays on AC power)
+Documentation=file:///srv/homeserver/docs/03b-portatile-come-server.md
+# The vendor drivers that add the charge limit to the battery are loaded by udev.
+After=systemd-udev-trigger.service systemd-modules-load.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+# START END: charging starts again below START percent and stops at END.
+ExecStart=/srv/homeserver/scripts/battery-limit.sh 75 80
+
+[Install]
+WantedBy=multi-user.target

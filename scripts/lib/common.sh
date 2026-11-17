@@ -102,6 +102,17 @@ default_route_field() {
   awk -v f="$field" '{ for (i = 1; i < NF; i++) if ($i == f) { print $(i + 1); exit } }' <<<"$out"
 }
 
+# The laptop batteries of this machine (/sys/class/power_supply/BAT*), one sysfs path per line;
+# nothing on a desktop. Batteries of devices (a wireless mouse: scope "Device") do not count.
+system_batteries() {
+  local dev
+  for dev in /sys/class/power_supply/BAT*; do
+    [[ -r $dev/type && $(<"$dev/type") == Battery ]] || continue
+    if [[ -r $dev/scope && $(<"$dev/scope") == Device ]]; then continue; fi
+    printf '%s\n' "$dev"
+  done
+}
+
 # Run a command as USER with a login-like environment (HOME, PATH from their profile).
 as_user() {
   local user=$1

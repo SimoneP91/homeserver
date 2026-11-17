@@ -12,9 +12,10 @@
 #   --no-firewall        do not configure or enable ufw
 #   --no-infra           do not start the infra stack (Caddy, Dockge, Uptime Kuma)
 #   --no-ssh-hardening   keep password logins over SSH even when a key is installed
+#   --no-laptop          on a laptop, leave lid, sleep, screen and battery settings alone
 #   -h, --help           show this help
 #
-# See docs/03-primo-avvio.md.
+# See docs/03-primo-avvio.md (and docs/03b-portatile-come-server.md on a laptop).
 set -euo pipefail
 
 REPO_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
@@ -38,6 +39,7 @@ opt_tailscale=false
 opt_firewall=true
 opt_infra=true
 opt_ssh_hardening=true
+opt_laptop=true
 
 usage() {
   sed -n '2,/^set -euo/{/^set -euo/d;s/^# \{0,1\}//;p}' "${BASH_SOURCE[0]}"
@@ -53,6 +55,7 @@ parse_args() {
       --no-firewall) opt_firewall=false ;;
       --no-infra) opt_infra=false ;;
       --no-ssh-hardening) opt_ssh_hardening=false ;;
+      --no-laptop) opt_laptop=false ;;
       -h | --help) usage; exit 0 ;;
       *) die "unknown option: $1 (see --help)" ;;
     esac
@@ -84,7 +87,7 @@ base_packages() {
   apt_get update
   apt_get full-upgrade
   apt_install ca-certificates curl gnupg git make jq sqlite3 rsync tmux htop ncdu \
-    locales unattended-upgrades apt-listchanges \
+    locales unattended-upgrades apt-listchanges lm-sensors \
     avahi-daemon avahi-utils libnss-mdns ufw restic
   # SSD health (smartctl); its recommends would pull in a mail server.
   apt_install --no-recommends smartmontools
@@ -131,6 +134,100 @@ MaxRetentionSec=3month
 EOF
     systemctl restart systemd-journald
   fi
+}
+
+laptop() {
+  step "Laptop: lid, sleep, screen, battery"
+  local batteries
+  batteries=$(system_batteries)
+  if [[ -z $batteries ]]; then
+    info "no battery: not a laptop, nothing to do"
+    return 0
+  fi
+  if ! $opt_laptop; then
+    warn "battery found, but skipped (--no-laptop): closing the lid may suspend the server"
+    return 0
+  fi
+  info "battery found ($(xargs -n1 basename <<<"$batteries" | xargs)): this is a laptop"
+  laptop_lid
+  laptop_no_sleep
+  laptop_screen_off
+  laptop_battery_limit
+}
+
+laptop_lid() {
+  if write_file /etc/systemd/logind.conf.d/50-homeserver-laptop.conf 0644 <<'EOF'; then
+# Managed by /srv/homeserver/scripts/bootstrap.sh (--no-laptop to skip).
+# A laptop used as a server: closing the lid does nothing, on battery, on AC power or docked.
+[Login]
+HandleLidSwitch=ignore
+HandleLidSwitchExternalPower=ignore
+HandleLidSwitchDocked=ignore
+EOF
+    # systemd-logind is a Type=notify-reload service (systemd 253 and later): a reload makes it
+    # read its configuration again without ending the login sessions, as a restart could.
+    systemctl reload systemd-logind
+  fi
+  local value
+  value=$(busctl get-property org.freedesktop.login1 /org/freedesktop/login1 \
+    org.freedesktop.login1.Manager HandleLidSwitch 2>/dev/null || true)
+  if [[ $value == 's "ignore"' ]]; then
+    ok "closing the lid: ignored"
+  else
+    warn "logind reports HandleLidSwitch ${value:-unknown}: see systemd-analyze cat-config systemd/logind.conf"
+  fi
+}
+
+laptop_no_sleep() {
+  local target todo=()
+  for target in sleep.target suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate.target; do
+    [[ $(systemctl is-enabled "$target" 2>/dev/null || true) == masked ]] || todo+=("$target")
+  done
+  if ((${#todo[@]})); then
+    systemctl mask --quiet "${todo[@]}"
+    ok "suspend and hibernation off (masked: ${todo[*]})"
+  else
+    info "suspend and hibernation already off"
+  fi
+}
+
+laptop_screen_off() {
+  if [[ ! -f /etc/default/grub ]] || ! command -v update-grub >/dev/null; then
+    warn "GRUB not found: add consoleblank=60 to the kernel command line by hand to turn the screen off"
+    return 0
+  fi
+  # A drop-in rather than an edit of /etc/default/grub: Debian's grub-mkconfig reads
+  # /etc/default/grub.d/*.cfg after it, and the line is added exactly once.
+  if write_file /etc/default/grub.d/50-homeserver-laptop.cfg 0644 <<'EOF'; then
+# Managed by /srv/homeserver/scripts/bootstrap.sh (--no-laptop to skip).
+# Blank the text console after 60 s without keyboard input: the laptop's screen and its
+# backlight go off.
+GRUB_CMDLINE_LINUX_DEFAULT="$GRUB_CMDLINE_LINUX_DEFAULT consoleblank=60"
+EOF
+    update-grub
+  fi
+  if grep -qw consoleblank=60 /proc/cmdline; then
+    ok "screen off after 60 s without input"
+  else
+    info "screen off after 60 s without input: from the next reboot"
+  fi
+}
+
+laptop_battery_limit() {
+  local unit=homeserver-battery-limit.service line
+  chmod 0755 "$REPO_DIR/scripts/battery-limit.sh"
+  if ! "$REPO_DIR/scripts/battery-limit.sh" --check >/dev/null; then
+    warn "the firmware does not let Linux limit the battery charge (common on HP and other"
+    warn "consumer laptops): it charges to 100%. Look for a charge limit in the BIOS, see"
+    warn "docs/03b-portatile-come-server.md"
+    return 0
+  fi
+  install_unit "$unit" || true
+  systemctl daemon-reload
+  systemctl enable --quiet "$unit"
+  # Always run it again: it is cheap, and puts back a limit changed by hand.
+  systemctl restart "$unit" || warn "$unit failed: journalctl -u $unit"
+  while IFS= read -r line; do ok "$line"; done < <("$REPO_DIR/scripts/battery-limit.sh" --check || true)
 }
 
 automatic_updates() {
@@ -416,6 +513,7 @@ main() {
   base_packages
   time_and_locale
   journald_limits
+  laptop
   automatic_updates
   install_docker
   configure_avahi
