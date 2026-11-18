@@ -75,12 +75,42 @@ successo, i concetti da capire e i comandi per fare pratica.
 - **Comandi**: `ssh-keygen`, `ssh localhome`, `scp`, `ssh-keygen -F <host>`,
   `ssh-keyscan`.
 
-## Git senza server remoto
+## Git e GitHub
 
-- **Cosa è successo**: `homeserver` è arrivato sul server come `git bundle` copiato con `scp`, in
-  attesa di Azure DevOps.
-- **Concetti**: remote, `git pull`, bundle.
-- **Comandi**: `git remote -v`, `git log --oneline`, `git bundle create`, `git pull`.
+- **Cosa è successo**: `homeserver` è arrivato sul server prima come `git bundle` copiato con `scp`.
+  Poi, visto che Azure DevOps chiedeva un abbonamento Azure, abbiamo pubblicato i repository su
+  GitHub come privati. Il server scarica `homeserver` con una **deploy key**: una chiave SSH valida
+  per un solo repository e solo in lettura.
+- **Concetti**:
+  - remote e `origin`;
+  - branch che "segue" un branch remoto (`origin/main`);
+  - differenza tra `fetch` (scarica) e `pull` (scarica e applica);
+  - token con scope (`gh auth login`);
+  - deploy key e soprannomi in `~/.ssh/config` (un repository, una chiave);
+  - CI: a ogni push GitHub Actions esegue i controlli su una macchina pulita.
+- **Comandi**:
+  - Git: `git remote -v`, `git remote set-url`, `git fetch`, `git pull`, `git status -sb`,
+    `git log --oneline`;
+  - GitHub CLI: `gh auth status`, `gh repo create`, `gh run list`, `gh run watch`;
+  - SSH: `ssh -T github-homeserver`.
+
+## Azure DevOps e GitHub a confronto
+
+In azienda si usa Azure DevOps; qui facciamo le stesse cose con GitHub. I nomi cambiano, i concetti
+no:
+
+| Azure DevOps | GitHub |
+| --- | --- |
+| Organization / Project | account o organizzazione |
+| Repos | repository |
+| Branch policies (PR obbligatoria, reviewer, build validation) | rulesets o branch protection (PR obbligatoria, controlli richiesti) |
+| Pipelines (YAML in `azure-pipelines.yml`) | Actions (YAML in `.github/workflows/`) |
+| Microsoft-hosted agent | GitHub-hosted runner |
+| Self-hosted agent | self-hosted runner |
+| Environments con approvazioni | environments con *required reviewers* |
+| Library / variable groups, secret variables | secrets e variables |
+| Personal Access Token (PAT) | token di `gh auth login`, fine-grained PAT |
+| Boards (work item) | Issues e Projects |
 
 ## Monitoraggio
 
