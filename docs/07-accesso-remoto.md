@@ -15,10 +15,13 @@ personale è gratuito.
 
 ## Installare
 
-1. Sul server, rilancia il bootstrap con l'opzione (non tocca il resto):
+1. Sul server, rilancia il bootstrap aggiungendo `--tailscale` alle **stesse opzioni** della
+   prima volta. Le opzioni descrivono come dev'essere il server, e quelle che ometti vengono
+   tolte: per esempio, senza `--auto-reboot` il riavvio automatico si spegne. Se non ricordi le
+   opzioni, cercale con `grep bootstrap ~/.bash_history`.
 
    ```sh
-   sudo bash /srv/homeserver/scripts/bootstrap.sh --tailscale
+   sudo bash /srv/homeserver/scripts/bootstrap.sh --auto-reboot 04:30 --tailscale
    sudo tailscale up --accept-dns=false
    ```
 
@@ -27,8 +30,15 @@ personale è gratuito.
    nomi della rete Tailscale e così Docker non ne risente.
 2. Nella console di amministrazione (<https://login.tailscale.com/admin/machines>), sul server:
    *… → Disable key expiry*, altrimenti dopo 180 giorni esce dalla rete e va riautenticato.
-3. Installa l'app **Tailscale** su telefono (iPhone o Android) e PC Windows e accedi con lo stesso
-   account.
+3. Installa l'app **Tailscale** sui telefoni (iPhone o Android) e accedi con lo stesso account.
+   - **iPhone**: nelle impostazioni dell'app attiva **Use Tailscale DNS**, altrimenti i nomi
+     `*.ts.net` non si risolvono, e **VPN On Demand**, così non devi accenderla a mano.
+   - **Android**: Impostazioni → Rete e Internet → VPN → ⚙️ Tailscale → **VPN sempre attiva**.
+   - Il PC di casa non ne ha bisogno, perché è già nella rete. Serve solo su un PC che deve
+     raggiungere il server da fuori casa.
+4. Prova dal telefono **con il Wi-Fi spento**. Prima apri `http://<ip-tailscale-del-server>`
+   (l'IP lo stampa `tailscale ip -4`), poi `http://<hostname>.<nome-tailnet>.ts.net`. Se l'IP
+   funziona e il nome no, il telefono non usa il DNS di Tailscale: vedi il punto 3.
 
 Il firewall accetta tutto ciò che arriva dall'interfaccia `tailscale0`, cioè solo dai tuoi
 dispositivi.
@@ -36,7 +46,9 @@ dispositivi.
 ## Raggiungere il server: MagicDNS
 
 Con **MagicDNS** (attivo di default; *DNS* nella console) ogni dispositivo ha un nome: il server è
-`casa`, o per esteso `casa.<nome-tailnet>.ts.net` (il nome della tailnet è nella pagina *DNS*).
+`casa` (cioè il suo hostname, nel nostro caso `localhome`), o per esteso
+`casa.<nome-tailnet>.ts.net`; il nome della tailnet è nella pagina *DNS*. Il server stesso non
+risolve questi nomi perché ha `--accept-dns=false`, ed è normale.
 
 SSH da fuori casa, dal PC con Tailscale acceso:
 
